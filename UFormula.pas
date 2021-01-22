@@ -1,0 +1,245 @@
+unit UFormula;
+
+interface
+
+type
+  pTree =^TTree;           {Уакзатель на элемент дерева}
+  TTree =record            {Элемент дерева}
+         Data:string;      {Данные в элементе}
+         Father,           {Указалтель на отца элемента}
+         Left,             {Указатель на левого потомка}
+         Right:PTree;      {Указатель на правого потомка}
+         end;
+
+
+Function FunctX(St:String; X1,X2:real):real;
+
+implementation
+uses uForm;
+
+{Процедура обхода дерева}
+Procedure obhod(ptr:PTree; {Элемент дерева}
+                var st:string); {Срока польской записи}
+  var
+    per1,per2,rez:Real;    {Переменные для вычисления результата}
+    k,i:integer;   {Дополнительная переменная}
+  begin
+  if Ptr<>nil then  {Если не дошли до конца дерева}
+    begin
+    St:=st+';'+Ptr^.Data;  {Записываем польскую запись}
+    Obhod(ptr^.Left,st);  {Совершаем обход всего левого поддерева}
+    Obhod(ptr^.Right,st); {Совершаем обход всего правого поддерева}
+    if ((Ptr^.Data='+') or (Ptr^.Data='*') or (Ptr^.Data='-') or (Ptr^.Data='/') or (Ptr^.Data='^')) and
+       (ptr^.Left^.Data<>'+') and(ptr^.Left^.Data<>'*') and (ptr^.Left^.Data<>'-') and(ptr^.Left^.Data<>'/') and(ptr^.Left^.Data<>'^')and
+       (ptr^.right^.Data<>'+')and(ptr^.right^.Data<>'+') and (ptr^.right^.Data<>'-')and(ptr^.right^.Data<>'/') and(ptr^.right^.Data<>'^')then
+       begin                {Если потомки числа, а элемент - операция, то вычисляем результат и заносим его в элемент}
+       Val(ptr^.left^.Data,per1,k);
+       Val(ptr^.Right^.Data,per2,k);
+       Dispose(Ptr^.Left);
+       Dispose(Ptr^.Right);
+       rez:=0;
+       if Ptr^.data='+' then rez:=Per1+per2;
+       if Ptr^.data='-' then rez:=Per1-per2;
+       if Ptr^.data='*' then rez:=per1*per2;
+       if Ptr^.data='/' then rez:=Per1/per2;
+       if Ptr^.data='^' then
+         begin
+         rez:=1;
+         For i:=1 to Trunc(per2) do
+           rez:=Per1*rez;
+         end;
+       Str(rez,Ptr^.Data);
+       end;
+    end;
+  end;
+
+{Процедура удаления дерева}
+Procedure DeleteTree(ptr:PTree);
+  begin
+  if Ptr<>nil then  {Если не дошли до конца дерева}
+    begin
+    DeleteTree(ptr^.Left);  {Совершаем обход всего левого поддерева}
+    DeleteTree(ptr^.Right); {Совершаем обход всего правого поддерева}
+    Dispose(Ptr);
+    end;
+  end;
+
+
+{Процедура вычисления результата}
+Function FunctX(St:String; X1,X2:real):real;
+Var
+  st1:String;     {Для выделения числа}
+  NomSt:word;          {Позиция считанноо символа в строке}
+  FCur,           {Элемент для двойного добавления элементов в дерево}
+  NCur,           {Элемент для добавления в дерево}
+  Cur,            {Текущий элемент дерева}
+  Head:PTree;     {Указатель на корень дерева}
+  k:integer;
+  kolSk:word;
+  Ch:Char;
+begin
+  Head:=nil;
+  Cur:=Head;
+  NomSt:=1;
+  if (St[NomSt]='-') then
+    begin
+    st:='0'+st;
+    end;
+  While NomSt<=Length(st) do {Проходим по всей строке}
+    begin
+    if ((St[NomSt]='*') or (St[NomSt]='+') or (St[NomSt]='-') or (St[NomSt]='/') or (St[NomSt]='^')) and (NomSt<>1) then
+      begin                    {Если текущий элемент - знак}
+      If Cur^.Data='Sk' then   {Если перед ним быа скобка - пишем знак за место её}
+        Cur^.Data:=St[NomSt]
+      else
+        begin
+        while Cur^.Father<>nil do {Передвигаемся на позицию, в которую можно вставить знак}
+          Cur:=Cur^.Father;
+        New(NCur);              {Создаем новый элемент}
+        NCur^.Data:=St[NomSt];
+        NCur^.Left:=nil;
+        NCur^.Right:=nil;
+        NCur^.Father:=nil;
+        Cur^.Father:=NCur;     {Считаем его самым верхним}
+        NCur^.Left:=Cur;       {Слева размещаем уже построенное дерево}
+        Head:=NCur;
+        Cur:=Head;
+        end;
+      end;
+    if (((St[NomSt]>='0') and (St[NomSt]<='9')) or (St[NomSt]='X') or (St[NomSt]='E') or (St[NomSt]='S') or (St[NomSt]='C') or (St[NomSt]='L')) then
+      begin                      {Если считанный символ - цифра}
+      if (St[NomSt]<>'X') And (St[NomSt]<>'E') And (St[NomSt]<>'S') and (St[NomSt]<>'C') and (St[NomSt]<>'L') then
+      begin
+      st1:='';
+      While ((St[NomSt]>='0') and (St[NomSt]<='9')) or (St[NomSt]='.') do
+        begin
+        st1:=st1+st[nomSt];   {Считываем строку}
+        Inc(NomSt);
+        end;
+      end;
+      if (St[NomSt]='X') then
+        begin
+        Str(X1,St1);
+        Inc(NomSt);
+        if (St[NomSt]='1') then
+          Inc(NomSt);
+        if (St[NomSt]='2') then
+          begin
+          Str(X2,St1);
+          Inc(NomSt);
+          end;
+        end;
+      If ((St[NomSt]='E') and (St[NomSt+1]='x') and (St[NomSt+2]='p')) or
+         ((St[NomSt]='S') and (St[NomSt+1]='i') and (St[NomSt+2]='n')) or
+         ((St[NomSt]='C') and (St[NomSt+1]='o') and (St[NomSt+2]='s')) or
+         ((St[NomSt]='L') and (St[NomSt+1]='n')) then
+        begin
+        Ch:=St[NomSt];
+        If (Ch='L') then Nomst:=Nomst-1;
+        Nomst:=NomSt+3;
+        KolSk:=1;
+        st1:='';
+        While KolSk<>0 do
+          begin
+          Inc(NomSt);
+          if (St[NomSt]='(') then Inc(KolSk);
+          if (St[NomSt]=')') then Dec(KolSk);
+          If KolSk<>0 then
+          st1:=St1+St[NomSt];
+          end;
+        Case Ch of
+          'E': Str(Exp(FunctX(St1,X1,X2)),st1);
+          'S': Str(Sin(FunctX(St1,X1,X2)),st1);
+          'C': Str(Cos(FunctX(St1,X1,X2)),st1);
+          'L': Str(Ln(FunctX(St1,X1,X2)),st1);
+          end;
+        end;
+      New(NCur);       {Создаем новый элемент}
+      NCur^.Data:=St1;
+      NCur^.Left:=nil;
+      NCur^.Right:=nil;
+      If Head=nil then   {Если дерево пустое - считаем элемент - корнем}
+        begin
+        NCur^.father:=nil;
+        Head:=NCur;
+        Cur:=Head;
+        dec(NomSt);
+        end
+      else
+        NCur^.Father:=Cur; {Иначе присоединяем его к текущему}
+      If Cur<>NCur then
+      If (St[NomSt]<>'*') and (St[NomSt]<>'/') and (St[NomSt]<>'^') then
+        begin             {Если за элементом не идут знаки * или / ^}
+        Dec(NomSt);       {То будем обрабатывать их после}
+        If Cur^.Left=nil then {Записываем указатель в нужную сторону}
+          Cur^.Left:=NCur
+        else
+          Cur^.Right:=NCur;
+        end
+      else
+        begin
+        New(FCur);         {Создаем переменную знака}
+        FCur^.Data:=St[NomSt];
+        FCur^.Left:=NCur;   {Слева размещаем новое число}
+        FCur^.Right:=nil;
+        FCur^.Father:=Cur;  {А отцом его считаем текущий элемент}
+        Cur^.Right:=FCur;   {И пристыковываем его справа от текущего элемента}
+        NCur^.Father:=FCur;
+        Cur:=FCur;
+        end;
+      end;
+    If St[NomSt]='(' then   {Если нашли открывающуюся скобку}
+      if Head=nil then      {если это превый элемент}
+        begin
+        New(Head);
+        Head^.Data:='Sk';
+        Head^.Left:=nil;
+        Head^.Right:=nil;
+        Head^.Father:=nil;
+        Cur:=Head;            {То он является корнем дерева}
+        end
+      else
+        begin
+        New(NCur);            {Создаем новый элемент}
+        NCur^.Data:='Sk';
+        NCur^.Left:=nil;
+        NCur^.Right:=nil;
+        NCur^.Father:=nil;
+        If Cur^.Left=nil then   {Если можно присоединить слева - присоединяем}
+          begin
+          NCur^.Father:=Cur;
+          Cur^.Left:=NCur;
+          end
+        else
+          If Cur^.Right=nil then  {Если можно присоединить справа - присоединяем}
+            begin
+            NCur^.Father:=Cur;
+            Cur^.Right:=NCur;
+            end
+          else
+            begin
+            NCur^.Left:=Cur;      {Иначе считаем его корнем и присоединяем к нему поддерево}
+            Cur^.Father:=NCur;
+            Head:=NCur;
+            end;
+        Cur:=NCur;
+        end;
+    if (St[NomSt]=')') and (Cur^.Father<>nil) then
+      begin
+      Cur:=Cur^.Father;         {Если нашли закрывающуюся скобку - идем вверх}
+      end;
+    Inc(NomSt);        {Переходим к следующему элементу строки}
+    end;
+  st:='';
+  obhod(Head,st);        {Выполняем обход}
+  if Head<>nil then
+    Val(Head^.Data,result,k) {Записываем результат}
+  else
+    result:=0;
+    Dispose(Head);
+{  DeleteTree(Head);  }
+{ form1.Label2.Caption:=St;  }
+{  LbPolsk.Caption:='Выражение в польской записи  '+st;}
+end;
+
+end.
